@@ -26,6 +26,17 @@ CREATE TABLE IF NOT EXISTS berita (
 CREATE INDEX IF NOT EXISTS idx_berita_status  ON berita (status);
 CREATE INDEX IF NOT EXISTS idx_berita_tanggal ON berita (tanggal DESC);
 
+-- Tabel API Keys
+CREATE TABLE IF NOT EXISTS api_keys (
+    id          SERIAL PRIMARY KEY,
+    key_hash    VARCHAR(64)  NOT NULL UNIQUE,
+    label       VARCHAR(100) NOT NULL DEFAULT 'default',
+    created_ts  BIGINT       NOT NULL,
+    revoked     BOOLEAN      NOT NULL DEFAULT false
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash);
+
 -- Contoh data awal (opsional, boleh dihapus)
 INSERT INTO berita (kalimat, status) VALUES
     ('Pemerintah daerah meresmikan jembatan baru di pusat kota.', 'approved'),

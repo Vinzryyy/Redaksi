@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester — Berita App</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
+        h1 { font-size: 1.5rem; margin-bottom: 8px; color: #38bdf8; }
+        h2 { font-size: 1.1rem; margin-bottom: 12px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+        label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; margin-top: 12px; }
+        input, textarea, select { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 0.9rem; }
+        textarea { resize: vertical; min-height: 60px; }
+        button { margin-top: 14px; padding: 8px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: opacity .15s; }
+        button:hover { opacity: 0.85; }
+        .btn-blue { background: #3b82f6; color: #fff; }
+        .btn-green { background: #22c55e; color: #fff; }
+        .btn-red { background: #ef4444; color: #fff; }
+        .btn-yellow { background: #eab308; color: #1e293b; }
+        .btn-purple { background: #a855f7; color: #fff; }
+        .result { margin-top: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; color: #a5f3fc; }
+        .status-bar { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+        .s-ok { background: #166534; color: #4ade80; }
+        .s-err { background: #7f1d1d; color: #fca5a5; }
+        .api-key-box { background: #1a2e05; border: 1px solid #22c55e; border-radius: 8px; padding: 12px; margin-top: 12px; }
+        .api-key-box code { color: #4ade80; font-size: 0.95rem; word-break: break-all; }
+        .topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+        .key-input { display: flex; gap: 8px; align-items: center; background: #1e293b; padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; flex: 1; }
+        .key-input input { border: none; background: transparent; }
+        .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>API Tester</h1>
+        <div class="key-input">
+            <label style="margin:0; white-space:nowrap;">X-API-Key:</label>
+            <input type="text" id="globalApiKey" placeholder="Paste API key di sini (generate dulu di bawah)">
+        </div>
+    </div>
+    <p class="subtitle">Halaman tes untuk semua endpoint API Berita. Generate API key dulu, lalu gunakan untuk approve/reject.</p>
+
+    <div class="grid">
+        <!-- 1. Health Check -->
+        <div class="card">
+            <h2>GET /api/health</h2>
+            <button class="btn-blue" onclick="testHealth()">Cek Koneksi</button>
+            <div class="result" id="resHealth">—</div>
+        </div>
+
+        <!-- 2. List News -->
+        <div class="card">
+            <h2>GET /api/news</h2>
+            <label>Filter status (opsional)</label>
+            <select id="newsStatus">
+                <option value="">Semua</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+            <button class="btn-blue" onclick="testListNews()">Ambil Berita</button>
+            <div class="result" id="resListNews">—</div>
+        </div>
+
+        <!-- 3. Create News -->
+        <div class="card">
+            <h2>POST /api/news</h2>
+            <label>Isi berita (maks 250 karakter)</label>
+            <textarea id="newsText" placeholder="Tulis berita di sini..."></textarea>
+            <button class="btn-green" onclick="testCreateNews()">Kirim Berita</button>
+            <div class="result" id="resCreateNews">—</div>
+        </div>
+
+        <!-- 4. Generate API Key -->
+        <div class="card">
+            <h2>POST /api/keys/generate</h2>
+            <label>Label (opsional)</label>
+            <input type="text" id="keyLabel" placeholder="mis: testing-key">
+            <button class="btn-purple" onclick="testGenerateKey()">Generate Key</button>
+            <div class="result" id="resGenerateKey">—</div>
+        </div>
+
+        <!-- 5. Verify Key -->
+        <div class="card">
+            <h2>GET /api/keys/verify</h2>
+            <p style="color:#94a3b8;font-size:0.8rem;">Menggunakan X-API-Key dari bar atas.</p>
+            <button class="btn-blue" onclick="testVerifyKey()">Verifikasi Key</button>
+            <div class="result" id="resVerifyKey">—</div>
+        </div>
+
+        <!-- 6. List Keys -->
+        <div class="card">
+            <h2>GET /api/keys</h2>
+            <button class="btn-blue" onclick="testListKeys()">Daftar Keys</button>
+            <div class="result" id="resListKeys">—</div>
+        </div>
+
+        <!-- 7. Approve -->
+        <div class="card">
+            <h2>POST /api/news/{id}/approve</h2>
+            <label>ID berita</label>
+            <input type="number" id="approveId" placeholder="ID">
+            <button class="btn-green" onclick="testApprove()">Approve</button>
+            <div class="result" id="resApprove">—</div>
+        </div>
+
+        <!-- 8. Reject -->
+        <div class="card">
+            <h2>POST /api/news/{id}/reject</h2>
+            <label>ID berita</label>
+            <input type="number" id="rejectId" placeholder="ID">
+            <label>Alasan (opsional)</label>
+            <input type="text" id="rejectReason" placeholder="Alasan penolakan">
+            <button class="btn-red" onclick="testReject()">Reject</button>
+            <div class="result" id="resReject">—</div>
+        </div>
+
+        <!-- 9. Revoke Key -->
+        <div class="card">
+            <h2>POST /api/keys/{id}/revoke</h2>
+            <label>ID key</label>
+            <input type="number" id="revokeKeyId" placeholder="ID">
+            <button class="btn-red" onclick="testRevokeKey()">Revoke Key</button>
+            <div class="result" id="resRevokeKey">—</div>
+        </div>
+    </div>
+
+    <script>
+        const BASE = "";
+
+        function getKey() {
+            return document.getElementById("globalApiKey").value.trim();
+        }
+
+        async function api(method, path, body, resultId) {
+            const el = document.getElementById(resultId);
+            el.textContent = "Loading...";
+            const opts = { method, headers: {} };
+            const key = getKey();
+            if (key) opts.headers["X-API-Key"] = key;
+            if (body) {
+                opts.headers["Content-Type"] = "application/json";
+                opts.body = JSON.stringify(body);
+            }
+            try {
+                const t0 = performance.now();
+                const res = await fetch(BASE + path, opts);
+                const ms = Math.round(performance.now() - t0);
+                const data = await res.json();
+                const status = res.ok ? "OK" : "ERR";
+                el.textContent = `[${res.status} ${status}] ${ms}ms\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                el.textContent = "Error: " + e.message;
+            }
+        }
+
+        function testHealth() { api("GET", "/api/health", null, "resHealth"); }
+
+        function testListNews() {
+            const s = document.getElementById("newsStatus").value;
+            const q = s ? "?status=" + s : "";
+            api("GET", "/api/news" + q, null, "resListNews");
+        }
+
+        function testCreateNews() {
+            const t = document.getElementById("newsText").value.trim();
+            if (!t) return alert("Isi berita dulu!");
+            api("POST", "/api/news", { berita: t }, "resCreateNews");
+        }
+
+        async function testGenerateKey() {
+            const label = document.getElementById("keyLabel").value.trim() || "testing";
+            const el = document.getElementById("resGenerateKey");
+            el.textContent = "Loading...";
+            try {
+                const res = await fetch(BASE + "/api/keys/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ label }),
+                });
+                const data = await res.json();
+                el.textContent = JSON.stringify(data, null, 2);
+                if (data.key) {
+                    document.getElementById("globalApiKey").value = data.key;
+                    el.textContent += "\n\n✅ Key otomatis diisi di bar atas!";
+                }
+            } catch (e) {
+                el.textContent = "Error: " + e.message;
+            }
+        }
+
+        function testVerifyKey() { api("GET", "/api/keys/verify", null, "resVerifyKey"); }
+        function testListKeys() { api("GET", "/api/keys", null, "resListKeys"); }
+
+        function testApprove() {
+            const id = document.getElementById("approveId").value;
+            if (!id) return alert("Isi ID berita!");
+            api("POST", "/api/news/" + id + "/approve", {}, "resApprove");
+        }
+
+        function testReject() {
+            const id = document.getElementById("rejectId").value;
+            if (!id) return alert("Isi ID berita!");
+            const alasan = document.getElementById("rejectReason").value.trim();
+            api("POST", "/api/news/" + id + "/reject", alasan ? { alasan } : {}, "resReject");
+        }
+
+        function testRevokeKey() {
+            const id = document.getElementById("revokeKeyId").value;
+            if (!id) return alert("Isi ID key!");
+            api("POST", "/api/keys/" + id + "/revoke", {}, "resRevokeKey");
+        }
+    </script>
+</body>
+</html>
